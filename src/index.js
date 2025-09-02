@@ -1,5 +1,6 @@
-import { createGraphiQLFetcher } from '@graphiql/toolkit';
+import { createGraphiQLFetcher,  } from '@graphiql/toolkit';
 import { GraphiQL } from 'graphiql';
+import { buildSchema } from 'graphql';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import 'graphiql/graphiql.css';
@@ -7,12 +8,26 @@ import 'graphiql/graphiql.css';
 const search = window.location.search;
 const params = new URLSearchParams(search);
 const auth_token = params.get('auth_token');
-const fetcher = createGraphiQLFetcher({ url: `https://api.flotiq.com/api/graphql?auth_token=${auth_token}` });
+
+const schema = await fetch(`https://api.flotiq.com/api/v2/graphql/schema?auth_token=${auth_token}`, {
+  method: 'GET',
+}).then(response => {
+  if (!response.ok) {
+    return response.text().then(errorMessage => {
+      throw new Error(`HTTP Error: ${response.status} - ${errorMessage}`);
+    });
+  }
+  return response.text();
+});
+
+const fetcher = createGraphiQLFetcher({
+  url: `https://api.flotiq.com/api/v2/graphql?auth_token=${auth_token}`,
+});
 
 const root = createRoot(document.getElementById('root'));
 root.render(
   <div style={{height: 'calc(100vh - 16px)'}}>
-    <GraphiQL fetcher={fetcher} >
+    <GraphiQL fetcher={fetcher} schema={buildSchema(schema)} >
       <GraphiQL.Logo>
         <a href="https://flotiq.com" target="_blank">
           <img
